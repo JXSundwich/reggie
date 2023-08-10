@@ -12,11 +12,11 @@ import com.sundwich.reggie.service.SetmealService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+
 import java.util.stream.Collectors;
 
 /**
@@ -113,5 +113,21 @@ public class SetmealController {
         setmealService.update(lambdaUpdateWrapper);
         return R.success("启售成功");
 
+    }
+
+    /**
+     * 根据条件查询套餐数据
+     * @param setmeal
+     * @return
+     */
+    @GetMapping("/list")
+    @Cacheable(value="setmealCache",key="#setmeal.getCategoryId()+'_'+#setmeal.status")
+    public R<List<Setmeal>> list(Setmeal setmeal){
+            LambdaQueryWrapper<Setmeal> queryWrapper=new LambdaQueryWrapper<>();
+            queryWrapper.eq(setmeal.getCategoryId()!=null,Setmeal::getCategoryId,setmeal.getCategoryId());
+            queryWrapper.eq(setmeal.getStatus()!=null, Setmeal::getStatus,setmeal.getStatus());
+            queryWrapper.orderByDesc(Setmeal::getUpdateTime);
+            List<Setmeal> list=setmealService.list(queryWrapper);
+            return R.success(list);
     }
 }
